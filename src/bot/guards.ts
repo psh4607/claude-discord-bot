@@ -9,8 +9,9 @@ export function isClaudeCategory(
 
 export function hasRequiredRole(
   member: GuildMember,
-  roleName: string,
+  roleName: string | undefined,
 ): boolean {
+  if (!roleName) return true;
   return Array.from(member.roles.cache.values()).some(role => role.name === roleName);
 }
 
@@ -18,7 +19,7 @@ export function canUseSession(
   channel: GuildChannel,
   member: GuildMember,
   categoryName: string,
-  roleName: string,
+  roleName: string | undefined,
 ): boolean {
   return isClaudeCategory(channel, categoryName) && hasRequiredRole(member, roleName);
 }

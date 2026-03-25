@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 export interface Config {
   discordToken: string;
   categoryName: string;
-  requiredRole: string;
+  requiredRole: string | undefined;
   dataDir: string;
   retentionDays: number;
 }
@@ -17,7 +17,7 @@ function requireEnv(key: string): string {
 export function loadConfig(): Config {
   return {
     discordToken: requireEnv('DISCORD_TOKEN'),
-    requiredRole: requireEnv('DISCORD_REQUIRED_ROLE'),
+    requiredRole: process.env.DISCORD_REQUIRED_ROLE,
     categoryName: process.env.DISCORD_CATEGORY_NAME ?? 'claude',
     dataDir: resolve(process.env.DATA_DIR ?? './data'),
     retentionDays: Number(process.env.ARCHIVE_RETENTION_DAYS ?? '30'),
