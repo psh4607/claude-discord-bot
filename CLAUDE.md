@@ -29,14 +29,14 @@ docs/               # 설계 문서
 
 `.env.example`을 복사하여 `.env`를 생성하고 값을 채운다:
 
-| 변수 | 설명 |
-|------|------|
-| `DISCORD_TOKEN` | Discord 봇 토큰 |
-| `DISCORD_CATEGORY_NAME` | 봇이 관리할 채널 카테고리 이름 (기본값: claude) |
-| `DISCORD_REQUIRED_ROLE` | 봇 사용 가능 역할 (미설정 시 전체 허용) |
-| `ANTHROPIC_API_KEY` | Anthropic API 키 |
-| `DATA_DIR` | 세션 데이터 저장 경로 (기본값: ./data) |
-| `ARCHIVE_RETENTION_DAYS` | 아카이브 보존 기간 (기본값: 30) |
+| 변수                     | 설명                                            |
+| ------------------------ | ----------------------------------------------- |
+| `DISCORD_TOKEN`          | Discord 봇 토큰                                 |
+| `DISCORD_CATEGORY_NAME`  | 봇이 관리할 채널 카테고리 이름 (기본값: claude) |
+| `DISCORD_REQUIRED_ROLE`  | 봇 사용 가능 역할 (미설정 시 전체 허용)         |
+| `ANTHROPIC_API_KEY`      | Anthropic API 키                                |
+| `DATA_DIR`               | 세션 데이터 저장 경로 (기본값: ./data)          |
+| `ARCHIVE_RETENTION_DAYS` | 아카이브 보존 기간 (기본값: 30)                 |
 
 ## 빌드 및 실행
 
@@ -55,4 +55,22 @@ pnpm start
 
 # 테스트
 pnpm test
+```
+
+## 배포 반영
+
+ssh dalpha-mac에 접속하여 다음 명령어 실행:
+
+```bash
+cd ~/projects/seongho/projects/claude-discord-bot
+git pull origin main
+pnpm install
+pnpm build
+pm2 restart claude-discord-bot
+```
+
+배포가 잘 되었는지 꼭 로그 확인:
+
+```bash
+pm2 logs claude-discord-bot
 ```

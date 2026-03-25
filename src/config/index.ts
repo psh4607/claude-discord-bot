@@ -6,6 +6,7 @@ export interface Config {
   requiredRole: string | undefined;
   dataDir: string;
   retentionDays: number;
+  model: string;
 }
 
 function requireEnv(key: string): string {
@@ -21,5 +22,6 @@ export function loadConfig(): Config {
     categoryName: process.env.DISCORD_CATEGORY_NAME ?? 'claude',
     dataDir: resolve(process.env.DATA_DIR ?? './data'),
     retentionDays: Number(process.env.ARCHIVE_RETENTION_DAYS ?? '30'),
+    model: process.env.CLAUDE_MODEL ?? 'claude-sonnet-4-6',
   };
 }
