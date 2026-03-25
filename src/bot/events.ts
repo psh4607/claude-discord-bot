@@ -1,5 +1,5 @@
 // src/bot/events.ts
-import type { Client, TextChannel, GuildMember } from 'discord.js';
+import type { Client, TextChannel } from 'discord.js';
 import { ChannelType } from 'discord.js';
 import type { SessionManager } from '../session/manager.js';
 import type { Config } from '../config/index.js';
