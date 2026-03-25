@@ -2,7 +2,7 @@
 import { loadConfig } from './config/index.js';
 import { createClient } from './bot/client.js';
 import { registerEvents } from './bot/events.js';
-import { SessionManager } from './session/manager.js';
+import { SessionPool } from './session/pool.js';
 import { Workspace } from './session/workspace.js';
 import { MessageSender } from './message/sender.js';
 import { scheduleRetention } from './storage/retention.js';
@@ -11,10 +11,10 @@ async function main() {
   const config = loadConfig();
   const workspace = new Workspace(config.dataDir);
   const sender = new MessageSender();
-  const sessionManager = new SessionManager(workspace, sender);
   const client = createClient();
+  const pool = new SessionPool(workspace, sender, config, client);
 
-  registerEvents(client, sessionManager, config);
+  registerEvents(client, pool, config);
 
   const retentionTimer = scheduleRetention(
     workspace.paths.archives,
@@ -24,7 +24,7 @@ async function main() {
 
   const shutdown = async () => {
     console.log('종료 시작...');
-    sessionManager.shutdown();
+    pool.shutdown();
     sender.cleanup();
     clearInterval(retentionTimer);
     client.destroy();

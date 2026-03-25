@@ -4,4 +4,6 @@ data/
 .env
 .DS_Store
 .omc/
-docs
+docs/
+CLAUDE.md
+.claude

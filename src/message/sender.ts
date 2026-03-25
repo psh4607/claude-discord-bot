@@ -2,9 +2,16 @@ import { AttachmentBuilder, type Message, type TextChannel } from 'discord.js';
 
 import type { FormattedMessage } from './formatter.js';
 
+interface StatusLogEntry {
+  message: Message;
+  lines: string[];
+  startTime: number;
+}
+
 export class MessageSender {
   private typingIntervals = new Map<string, NodeJS.Timeout>();
   private statusMessages = new Map<string, Message>();
+  private statusLogs = new Map<string, StatusLogEntry>();
 
   startTyping(channel: TextChannel): void {
     channel.sendTyping();
@@ -55,6 +62,34 @@ export class MessageSender {
     }
   }
 
+  async appendStatusLog(channel: TextChannel, line: string): Promise<void> {
+    const entry = this.statusLogs.get(channel.id);
+    if (entry) {
+      entry.lines.push(line);
+      const content = this.formatStatusLog(entry.lines);
+      await entry.message.edit(content).catch(() => {});
+    } else {
+      const msg = await channel.send(this.formatStatusLog([line]));
+      this.statusLogs.set(channel.id, { message: msg, lines: [line], startTime: Date.now() });
+    }
+  }
+
+  async finalizeStatusLog(channelId: string): Promise<void> {
+    const entry = this.statusLogs.get(channelId);
+    if (!entry) return;
+    const elapsed = ((Date.now() - entry.startTime) / 1000).toFixed(1);
+    const summary = `${entry.lines.length}개 도구 사용 · ${elapsed}초 소요`;
+    const content = this.formatStatusLog(entry.lines, summary);
+    await entry.message.edit(content).catch(() => {});
+    this.statusLogs.delete(channelId);
+  }
+
+  private formatStatusLog(lines: string[], summary?: string): string {
+    const body = lines.map(l => `│ ${l}`).join('\n');
+    const footer = summary ? `└ ${summary}` : `└ 처리 중...`;
+    return `┌ 실행 로그\n${body}\n${footer}`;
+  }
+
   cleanup(): void {
     for (const interval of this.typingIntervals.values()) {
       clearInterval(interval);
@@ -65,5 +100,7 @@ export class MessageSender {
       msg.delete().catch(() => {});
     }
     this.statusMessages.clear();
+
+    this.statusLogs.clear();
   }
 }
