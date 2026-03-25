@@ -4,6 +4,7 @@ import { ChannelType } from 'discord.js';
 
 import type { Config } from '../config/index.js';
 import type { SessionPool } from '../session/pool.js';
+import type { SkillCache } from '../skills/cache.js';
 import { registerCommands, handleInteraction } from './commands.js';
 import { isClaudeCategory, hasRequiredRole } from './guards.js';
 
@@ -11,6 +12,7 @@ export function registerEvents(
   client: Client,
   pool: SessionPool,
   config: Config,
+  skillCache: SkillCache,
 ): void {
   client.on('channelCreate', async (channel) => {
     if (!isGuildTextChannel(channel)) return;
@@ -69,6 +71,18 @@ export function registerEvents(
   });
 
   client.on('interactionCreate', async (interaction) => {
+    if (interaction.isAutocomplete()) {
+      const query = interaction.options.getFocused();
+      const results = skillCache.search(query);
+      await interaction.respond(
+        results.slice(0, 25).map(s => ({
+          name: `${s.fullName} — ${s.description}`.slice(0, 100),
+          value: s.fullName,
+        }))
+      ).catch(() => {});
+      return;
+    }
+
     if (!interaction.isChatInputCommand()) return;
     try {
       await handleInteraction(interaction, pool, config);
