@@ -1,24 +1,24 @@
 // src/bot/events.ts
 import type { Client, TextChannel } from 'discord.js';
 import { ChannelType } from 'discord.js';
-import type { SessionManager } from '../session/manager.js';
+
 import type { Config } from '../config/index.js';
+import type { SessionPool } from '../session/pool.js';
+import { registerCommands, handleInteraction } from './commands.js';
 import { isClaudeCategory, hasRequiredRole } from './guards.js';
 
 export function registerEvents(
   client: Client,
-  sessionManager: SessionManager,
+  pool: SessionPool,
   config: Config,
 ): void {
   client.on('channelCreate', async (channel) => {
     if (!isGuildTextChannel(channel)) return;
     if (!isClaudeCategory(channel, config.categoryName)) return;
 
-    // channelCreate 이벤트에서는 생성자 정보가 제공되지 않으므로
-    // 세션만 생성하고, 역할 검증은 messageCreate에서 수행한다.
     try {
-      await sessionManager.create(channel.id);
-      await channel.send('Claude Code 세션이 연결되었습니다.');
+      const bridge = await pool.create(channel.id, channel);
+      bridge.enqueue('새 세션이 시작되었습니다. 간단히 인사해주세요.', 'system');
     } catch (err) {
       console.error(`세션 생성 실패 (${channel.id}):`, err);
       await channel.send('세션 연결에 실패했습니다.').catch(() => {});
@@ -26,10 +26,10 @@ export function registerEvents(
   });
 
   client.on('channelDelete', async (channel) => {
-    if (!sessionManager.has(channel.id)) return;
+    if (!pool.has(channel.id)) return;
 
     try {
-      await sessionManager.close(channel.id, (channel as any).name);
+      await pool.close(channel.id, (channel as any).name);
     } catch (err) {
       console.error(`세션 종료 실패 (${channel.id}):`, err);
     }
@@ -46,23 +46,46 @@ export function registerEvents(
     const member = message.member;
     if (!member || !hasRequiredRole(member, config.requiredRole)) return;
 
-    if (!sessionManager.has(channel.id)) {
+    const bridge = pool.get(channel.id);
+    if (!bridge) {
       await channel.send('세션이 연결되지 않았습니다. 채널을 다시 생성해주세요.');
       return;
     }
 
-    sessionManager.enqueue(channel.id, message.content, channel);
+    bridge.enqueue(message.content, message.author.displayName);
   });
 
   client.once('ready', async () => {
     console.log(`봇 로그인 완료: ${client.user?.tag}`);
-    await recoverSessions(client, sessionManager, config);
+
+    // 슬래시 커맨드 등록 (guild별 1회)
+    for (const guild of client.guilds.cache.values()) {
+      await registerCommands(guild).catch(err =>
+        console.error(`커맨드 등록 실패 (${guild.name}):`, err),
+      );
+    }
+
+    await recoverSessions(client, pool, config);
+  });
+
+  client.on('interactionCreate', async (interaction) => {
+    if (!interaction.isChatInputCommand()) return;
+    try {
+      await handleInteraction(interaction, pool, config);
+    } catch (err) {
+      console.error('슬래시 커맨드 처리 실패:', err);
+      if (interaction.replied || interaction.deferred) {
+        await interaction.followUp('명령 처리 중 오류가 발생했습니다.').catch(() => {});
+      } else {
+        await interaction.reply('명령 처리 중 오류가 발생했습니다.').catch(() => {});
+      }
+    }
   });
 }
 
 async function recoverSessions(
   client: Client,
-  sessionManager: SessionManager,
+  pool: SessionPool,
   config: Config,
 ): Promise<void> {
   for (const guild of client.guilds.cache.values()) {
@@ -71,9 +94,9 @@ async function recoverSessions(
     );
 
     for (const [, channel] of channels) {
-      if (sessionManager.has(channel.id)) continue;
+      if (pool.has(channel.id)) continue;
       try {
-        await sessionManager.restore(channel.id);
+        await pool.restore(channel.id, channel as TextChannel);
         await (channel as TextChannel).send('세션이 재연결되었습니다.').catch(() => {});
       } catch (err) {
         console.error(`세션 복구 실패 (${channel.id}):`, err);
