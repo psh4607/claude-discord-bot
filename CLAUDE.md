@@ -1,4 +1,4 @@
-# claude-discord-bot
+# claude-discord-harness
 
 Discord 채널과 Claude Code 세션을 1:1 매핑하는 봇.
 Claude Code 하네스 위의 얇은 Transport Layer로, hooks/MCP tools/CLAUDE.md 등 하네스 기능을 활용한다.
@@ -88,15 +88,15 @@ pnpm test
 ssh dalpha-mac에 접속하여 다음 명령어 실행:
 
 ```bash
-cd ~/projects/seongho/projects/claude-discord-bot
+cd ~/projects/seongho/projects/claude-discord-harness
 git pull origin main
 pnpm install
 pnpm build
-pm2 restart claude-discord-bot
+pm2 restart claude-discord-harness
 ```
 
 배포가 잘 되었는지 꼭 로그 확인:
 
 ```bash
-pm2 logs claude-discord-bot
+pm2 logs claude-discord-harness
 ```
