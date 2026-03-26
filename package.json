@@ -1,7 +1,23 @@
 {
   "name": "claude-discord-harness",
   "version": "0.1.0",
+  "description": "A Discord bot that maps each channel to a dedicated Claude Code session",
   "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/psh4607/claude-discord-harness.git"
+  },
+  "keywords": [
+    "discord",
+    "claude",
+    "claude-code",
+    "ai",
+    "bot"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",

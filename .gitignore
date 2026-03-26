@@ -1,6 +1,13 @@
 node_modules/
 dist/
 data/
+
 .env
+.env.local
+
 .DS_Store
+*.log
+*.tsbuildinfo
+
 .omc/
+.claude/
